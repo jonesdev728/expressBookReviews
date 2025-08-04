@@ -10,9 +10,23 @@ app.use(express.json());
 
 app.use("/customer",session({secret:"fingerprint_customer",resave: true, saveUninitialized: true}))
 
-app.use("/customer/auth/*", function auth(req,res,next){
-//Write the authenication mechanism here
+app.use("/customer/auth/*", function auth(req, res, next) {
+    // Check if session and token exist
+    if (!req.session || !req.session.token) {
+        return res.status(403).json({ message: "User not logged in. Access denied." });
+    }
+
+    // Verify token
+    jwt.verify(req.session.token, "access", (err, user) => {
+        if (err) {
+            return res.status(403).json({ message: "Invalid or expired token. Access denied." });
+        }
+        // Attach decoded user info to request
+        req.user = user;
+        next();
+    });
 });
+
  
 const PORT =5000;
 
